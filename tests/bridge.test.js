@@ -115,6 +115,7 @@ async function run() {
   ws.close();
   await delay(200);
   serverProcess.kill('SIGTERM');
+  await delay(300);
   console.log('\nAll tests completed.');
   process.exit(0);
 }

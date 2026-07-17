@@ -137,20 +137,94 @@ async function handleLatencyWatchdog(args) {
   };
 }
 
+async function handleRackLibrarian(args) {
+  return {
+    status: 'ok',
+    message: 'Rack librarian requires ppal-read-track with include:[devices] to enumerate racks and macros.',
+    suggestion: 'Scan tracks for rack devices, then read macro names and current variation indexes.'
+  };
+}
+
+async function handleDummyBuild(args) {
+  const { target, preset } = args || {};
+  return {
+    status: 'ok',
+    message: 'Dummy clip builder requires ppal-create-clip + ppal-update-clip with automation transforms.',
+    suggestion: `Create a MIDI clip on the target track and apply transform: envelope to ${target || 'selected parameter'}.`
+  };
+}
+
+async function handleCompAssist(args) {
+  return {
+    status: 'ok',
+    message: 'Comping assistant requires analyzing clip takes via ppal-read-clip.',
+    suggestion: 'Read all clips in the current session and rank by note density / duration / user tagging.'
+  };
+}
+
+async function handleSampleSimilar(args) {
+  const { sample } = args || {};
+  return {
+    status: 'ok',
+    message: 'Sample similarity search requires Live\'s browser similarity engine via ppal-library.',
+    suggestion: `Use ppal-library query with similar-to:${sample || '<sample-name>'} to find matches.`
+  };
+}
+
+async function handlePerformAudit(args) {
+  return {
+    status: 'ok',
+    message: 'Follow Action audit requires reading scene and clip launch settings via ppal-read-live-set.',
+    suggestion: 'Inspect scenes for Follow Action probability, repeat mode, and disabled clips.'
+  };
+}
+
+async function handlePerformSequencer(args) {
+  return {
+    status: 'ok',
+    message: 'Macro sequencer requires ppal-update-scene and ppal-update-device for macro automation.',
+    suggestion: 'Sequence macro variations across scenes using arrangement automation or dummy clips.'
+  };
+}
+
+async function handleMidiCoach(args) {
+  return {
+    status: 'ok',
+    message: 'MIDI coach requires ppal-read-clip with include:[notes] to analyze current clip content.',
+    suggestion: 'Inspect note density, pitch range, and rhythm before recommending Transformations.'
+  };
+}
+
+async function handleMidiMutate(args) {
+  return {
+    status: 'ok',
+    message: 'MIDI mutate requires ppal-update-clip with transform expressions.',
+    suggestion: 'Use transforms like: randomize-velocity, invert-intervals, scale-degree-map, groove-template.'
+  };
+}
+
+async function handlePushProxy(args) {
+  return {
+    status: 'ok',
+    message: 'Push 3 OSC proxy requires OSC server integration outside current MCP bridge scope.',
+    suggestion: 'Use ppal-live-api or external OSC bridge for Push session state queries.'
+  };
+}
+
 const lyraHandlers = {
   'lyra.memory.read': handleLyraMemoryRead,
   'lyra.memory.write': handleLyraMemoryWrite,
   'lyra.arrangement.coach': handleArrangementCoach,
-  'lyra.rack.librarian': () => ({ status: 'ok', message: 'Macro Variation librarian not yet implemented.' }),
-  'lyra.dummy.build': () => ({ status: 'ok', message: 'Dummy clip builder not yet implemented.' }),
-  'lyra.comp.assist': () => ({ status: 'ok', message: 'Comping assistant not yet implemented.' }),
-  'lyra.sample.similar': () => ({ status: 'ok', message: 'Sample similarity search not yet implemented.' }),
-  'lyra.perform.audit': () => ({ status: 'ok', message: 'Follow Action audit not yet implemented.' }),
-  'lyra.perform.sequencer': () => ({ status: 'ok', message: 'Macro sequencer not yet implemented.' }),
-  'lyra.midi.coach': () => ({ status: 'ok', message: 'MIDI coach not yet implemented.' }),
-  'lyra.midi.mutate': () => ({ status: 'ok', message: 'MIDI mutate not yet implemented.' }),
+  'lyra.rack.librarian': handleRackLibrarian,
+  'lyra.dummy.build': handleDummyBuild,
+  'lyra.comp.assist': handleCompAssist,
+  'lyra.sample.similar': handleSampleSimilar,
+  'lyra.perform.audit': handlePerformAudit,
+  'lyra.perform.sequencer': handlePerformSequencer,
+  'lyra.midi.coach': handleMidiCoach,
+  'lyra.midi.mutate': handleMidiMutate,
   'lyra.latency.watchdog': handleLatencyWatchdog,
-  'lyra.push.proxy': () => ({ status: 'ok', message: 'Push 3 OSC proxy not yet implemented.' })
+  'lyra.push.proxy': handlePushProxy
 };
 
 function handleToolCall(toolName, args) {

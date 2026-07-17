@@ -8,6 +8,8 @@ build/
 *.amxd~
 *.maxpat
 *.als
+*.mxf
+*.mxf~
 
 # Audio / Media
 *.wav
@@ -35,3 +37,7 @@ Thumbs.db
 tmp/
 temp/
 *.tmp
+
+# Max for Live
+*.amxd~
+*.mxf~

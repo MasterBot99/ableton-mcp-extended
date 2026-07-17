@@ -6,7 +6,6 @@ dist/
 build/
 *.amxd
 *.amxd~
-*.maxpat
 *.als
 *.mxf
 *.mxf~
@@ -41,3 +40,4 @@ temp/
 # Max for Live
 *.amxd~
 *.mxf~
+plugin-marketplace/

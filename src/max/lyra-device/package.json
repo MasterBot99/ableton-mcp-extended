@@ -1,0 +1,10 @@
+{
+  "name": "lyra-device",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Node for Max dependencies for the Lyra M4L device (bridge-client.js)",
+  "type": "commonjs",
+  "dependencies": {
+    "ws": "^8.16.0"
+  }
+}

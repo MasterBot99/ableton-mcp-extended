@@ -1,0 +1,24 @@
+{
+  "name": "ableton-lyra-bridge",
+  "version": "0.1.0",
+  "description": "Lyra MCP Bridge — extends Producer Pal with lyra.* namespaces, WebSocket push, and project memory for Ableton Live 12.",
+  "main": "src/bridge/producer-pal-portal.js",
+  "type": "module",
+  "scripts": {
+    "start": "node src/bridge/producer-pal-portal.js",
+    "dev": "node --watch src/bridge/producer-pal-portal.js",
+    "test": "node --test tests/bridge.test.js"
+  },
+  "dependencies": {
+    "ws": "^8.16.0"
+  },
+  "keywords": [
+    "ableton",
+    "live",
+    "mcp",
+    "max-for-live",
+    "producer-pal",
+    "lyra"
+  ],
+  "license": "MIT"
+}

@@ -1,0 +1,171 @@
+{
+  "plugins": [
+    {
+      "name": "ableton-lyra",
+      "version": "0.1.0",
+      "description": "Lyra MCP Bridge — extends Producer Pal with lyra.* namespaces, WebSocket push, and project memory for Ableton Live 12.",
+      "license": "MIT",
+      "homepage": "https://github.com/andi/ableton-mcp-extended",
+      "source": {
+        "type": "local",
+        "path": "./external_plugins/ableton-lyra"
+      },
+      "tags": [
+        "ableton",
+        "live",
+        "mcp",
+        "max-for-live",
+        "producer-pal",
+        "lyra"
+      ],
+      "mcp": {
+        "tools": [
+          {
+            "namespace": "ppal",
+            "name": "ppal-connect",
+            "description": "Connect to Ableton Live and initialize Producer Pal."
+          },
+          {
+            "namespace": "ppal",
+            "name": "ppal-read-live-set",
+            "description": "Read Live Set global settings, track/scene overview."
+          },
+          {
+            "namespace": "ppal",
+            "name": "ppal-read-track",
+            "description": "Read track settings, clips, and devices."
+          },
+          {
+            "namespace": "ppal",
+            "name": "ppal-read-clip",
+            "description": "Read clip settings, MIDI notes, and audio properties."
+          },
+          {
+            "namespace": "ppal",
+            "name": "ppal-create-clip",
+            "description": "Create MIDI or audio clip(s)."
+          },
+          {
+            "namespace": "ppal",
+            "name": "ppal-update-clip",
+            "description": "Update clip(s), MIDI notes, and warp settings."
+          },
+          {
+            "namespace": "ppal",
+            "name": "ppal-update-track",
+            "description": "Update track(s)."
+          },
+          {
+            "namespace": "ppal",
+            "name": "ppal-update-device",
+            "description": "Update device(s), chain(s), or drum pad(s)."
+          },
+          {
+            "namespace": "ppal",
+            "name": "ppal-library",
+            "description": "Search Live's browser library by name, tags, kind, or source."
+          },
+          {
+            "namespace": "ppal",
+            "name": "ppal-playback",
+            "description": "Control playback of the arrangement and session scenes/clips."
+          },
+          {
+            "namespace": "ppal",
+            "name": "ppal-create-scene",
+            "description": "Create empty scene(s) or capture playing session clips."
+          },
+          {
+            "namespace": "ppal",
+            "name": "ppal-update-scene",
+            "description": "Update scene(s)."
+          },
+          {
+            "namespace": "ppal",
+            "name": "ppal-live-api",
+            "description": "Direct access to the Ableton Live Object Model."
+          },
+          {
+            "namespace": "ppal",
+            "name": "ppal-select",
+            "description": "Navigate to and select items in Live."
+          },
+          {
+            "namespace": "lyra",
+            "name": "lyra.memory.read",
+            "description": "Read project memory, session history, user preferences."
+          },
+          {
+            "namespace": "lyra",
+            "name": "lyra.memory.write",
+            "description": "Write memory (requires user confirmation for destructive ops)."
+          },
+          {
+            "namespace": "lyra",
+            "name": "lyra.arrangement.coach",
+            "description": "Analyze arrangement density, suggest consolidations."
+          },
+          {
+            "namespace": "lyra",
+            "name": "lyra.rack.librarian",
+            "description": "List, tag, and recall Macro Variations across all racks."
+          },
+          {
+            "namespace": "lyra",
+            "name": "lyra.dummy.build",
+            "description": "Generate dummy clip envelopes for a target parameter."
+          },
+          {
+            "namespace": "lyra",
+            "name": "lyra.comp.assist",
+            "description": "Monitor comping takes, suggest best sections."
+          },
+          {
+            "namespace": "lyra",
+            "name": "lyra.sample.similar",
+            "description": "Find similar samples using Live's built-in similarity engine."
+          },
+          {
+            "namespace": "lyra",
+            "name": "lyra.perform.audit",
+            "description": "Audit Follow Actions, launch modes, and scene probability."
+          },
+          {
+            "namespace": "lyra",
+            "name": "lyra.perform.sequencer",
+            "description": "Sequence Macro Variations or dummy clips in Arrangement."
+          },
+          {
+            "namespace": "lyra",
+            "name": "lyra.midi.coach",
+            "description": "Recommend MIDI Transformations for selected clips."
+          },
+          {
+            "namespace": "lyra",
+            "name": "lyra.midi.mutate",
+            "description": "Apply Max for Live MIDI Tools to generate or transform notes."
+          },
+          {
+            "namespace": "lyra",
+            "name": "lyra.latency.watchdog",
+            "description": "Scan device chain latency, recommend flatten targets."
+          },
+          {
+            "namespace": "lyra",
+            "name": "lyra.push.proxy",
+            "description": "Query and control Push 3 session state via OSC."
+          }
+        ]
+      },
+      "permissions": {
+        "network": [
+          "127.0.0.1:3351",
+          "127.0.0.1:3350"
+        ],
+        "filesystem": [
+          "~/Library/Application Support/ableton-lyra/memory/"
+        ]
+      }
+    }
+  ]
+}

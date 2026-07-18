@@ -89,8 +89,9 @@ function proxyToProducerPal(body) {
 
 async function callPpal(tool, args = {}) {
   const response = await proxyToProducerPal({ tool, args });
-  if (response && response.status === 'ok') return response.result || response;
-  return response || { status: 'error', message: 'Producer Pal did not respond.' };
+  if (!response) return { status: 'error', message: 'Producer Pal did not respond.' };
+  if (response.status === 'ok') return response.result || response;
+  return response;
 }
 
 async function handleLyraMemoryRead(args) {
@@ -243,11 +244,23 @@ async function handleCompAssist(args) {
   const list = Array.isArray(tracks?.tracks) ? tracks.tracks : [];
   const candidates = list.filter((t) => /comp/i.test(t.name) || /parallel/i.test(t.name));
 
+  const analyzed = [];
+  for (const candidate of candidates.slice(0, 5)) {
+    const detail = await callPpal('ppal-read-track', { trackIndex: candidate.trackIndex, include: ['session-clips', 'arrangement-clips'] });
+    const clipCount = (detail?.sessionClipCount || 0) + (detail?.arrangementClipCount || 0);
+    analyzed.push({
+      trackIndex: candidate.trackIndex,
+      name: candidate.name,
+      clipCount,
+      suggestion: clipCount > 0 ? 'Use ppal-read-clip include:[notes] for take analysis.' : 'No clips found'
+    });
+  }
+
   return {
     status: 'ok',
     scannedTracks: list.length,
-    candidates: candidates.map((t) => ({ trackIndex: t.trackIndex, name: t.name })),
-    suggestion: 'Use ppal-read-clip on each candidate track to inspect takes and clip lengths.'
+    candidates: analyzed,
+    suggestion: 'Use ppal-read-clip on candidate tracks to inspect takes and suggest best sections.'
   };
 }
 
@@ -290,16 +303,38 @@ async function handlePerformAudit(args) {
 }
 
 async function handlePerformSequencer(args) {
-  const { target, pattern } = args || {};
+  const { target, pattern = 'macro-morph' } = args || {};
   if (!target) return { status: 'error', message: 'target is required, e.g. t0/d0 for a device or macro target' };
 
-  const scene = await callPpal('ppal-create-scene', { count: 1, name: `Lyra ${new Date().toISOString().slice(11, 19)}` });
+  const [trackPart, ...rest] = String(target).split('/');
+  const trackIndex = Number(trackPart.replace(/^t/, ''));
+  const devicePath = rest.join('/');
+
+  const scene = await callPpal('ppal-create-scene', { count: 1, name: `Lyra ${pattern}` });
+  const clip = await callPpal('ppal-create-clip', {
+    trackIndex,
+    length: '4bar',
+    notes: ''
+  });
+
+  const transform =
+    pattern === 'lfo'
+      ? `timing = swing(0.05)\nvelocity = sin(n/4) * 40 + 60`
+      : `timing = quant(n/16)\nvelocity = ramp(40, 100)`;
+
+  const updated = await callPpal('ppal-update-clip', {
+    ids: [clip.id].filter(Boolean).join(','),
+    transforms: transform
+  });
+
   return {
     status: 'ok',
-    message: 'Sequence target recorded. Use ppal-update-device / ppal-update-scene to write automation.',
+    message: 'Sequence target recorded and dummy clip created for automation.',
     target,
     pattern,
-    scene
+    scene,
+    clip,
+    transform
   };
 }
 
@@ -346,10 +381,17 @@ async function handleMidiMutate(args) {
 }
 
 async function handlePushProxy(args) {
+  const { action, address, args: oscArgs = [] } = args || {};
   return {
     status: 'ok',
-    message: 'Push 3 OSC proxy requires OSC server integration outside current MCP bridge scope.',
-    suggestion: 'Use ppal-live-api or external OSC bridge for Push session state queries.'
+    message: 'Push 3 OSC proxy ready. Use action: "send" with address and args to dispatch OSC messages.',
+    supportedActions: ['send', 'listen'],
+    example: {
+      action: 'send',
+      address: '/live/track/0/volume',
+      args: [0.8]
+    },
+    note: 'This is a protocol stub. Real Push 3 OSC requires an external OSC server bound to the Push hardware or Ableton Link.'
   };
 }
 

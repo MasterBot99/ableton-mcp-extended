@@ -56,11 +56,11 @@
                         "defer": 0,
                         "watch": 1
                     },
-                    "text": "node.script /Users/andi/ableton-mcp-extended/src/max/lyra-device/bridge-client.js @autostart 1 @watch 1",
+                    "text": "node.script bridge-client.js @autostart 1 @watch 1",
                     "textfile": {
                         "filename": "bridge-client.js",
                         "flags": 0,
-                        "embed": 0,
+                        "embed": 1,
                         "autowatch": 1
                     },
                     "varname": "lyra_bridge"

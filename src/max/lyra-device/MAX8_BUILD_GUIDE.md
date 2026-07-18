@@ -1,14 +1,20 @@
-# Lyra — Max Patch: Save & Deploy
+# Lyra — Max Device: Build & Deploy
 
 ## Aktueller Stand
 
-Das Max-Patch `lyra-device.maxpat` und `bridge-client.js` sind bereits gebaut und getestet:
+Das Max-Patch `lyra-device.maxpat` ist gebaut und getestet:
 - `node.script` mit `@autostart 1 @watch 1`
 - `route`-Objekt dispatcht `status`, `suggestion`, `memory`, `result`, `error`, `message`
 - UI: Status-Bar, Suggestion-Deck, Memory-Strip, Result-Debug, Error-Display
 - Connect-Toggle + Tool-Test-Message vorbereitet
 - Bridge-Verbindung und `lyra.memory.read` getestet
-- Absoluter Script-Pfad in `node.script` eingetragen
+- Script ist im Patch eingebettet (`embed: 1`), keine externen Pfade nötig
+
+## Voraussetzungen
+
+- Max 8.2.0+ oder Max 9 (Node for Max ist eingebaut)
+- Bridge-Server läuft: `cd /Users/andi/ableton-mcp-extended && npm start`
+- `node_modules/` liegt im gleichen Ordner wie die `.maxpat`
 
 ## Schritt 1 — node_modules sicherstellen
 
@@ -17,11 +23,11 @@ cd /Users/andi/ableton-mcp-extended/src/max/lyra-device
 npm install
 ```
 
-Prüfen, dass `node_modules/ws/` existiert. Ohne diesen Ordner startet `node.script` nicht.
+Prüfen, dass `node_modules/ws/` existiert.
 
 ## Schritt 2 — Patch in Max öffnen
 
-1. Max 8 öffnen
+1. Max öffnen
 2. **File → Open** → `src/max/lyra-device/lyra-device.maxpat`
 3. Ggf. `node.script` neu laden:
    - Rechtsklick auf `node.script` → **Script → Reload**
@@ -50,27 +56,32 @@ curl http://127.0.0.1:3351/health
    - Memory-Feld zeigt `memory files: 0 @ <pfad>`
    - Max Console zeigt `Lyra: calling lyra.memory.read ...`
 
-## Schritt 5 — Als .maxpat speichern
+## Schritt 5 — Device exportieren
 
-**Wichtig:** Die `.maxpat` muss im gleichen Ordner wie `bridge-client.js` und `node_modules/` liegen, sonst findet `node.script` das Script nicht.
+**Wichtig:** Um das Patch als echtes M4L-Device zu exportieren, brauchst du eine aktive **Max for Live Lizenz**.
 
-1. Im Patch: **File → Save As**
-2. Format: **Max Patch** (`.maxpat`)
-3. Dateiname: `Lyra.maxpat`
-4. Ordner: `/Users/andi/ableton-mcp-extended/src/max/lyra-device/`
-   - **Nicht** in `~/Music/Ableton/User Library/` speichern, solange du entwickelst
-5. Speichern
+### Mit M4L-Lizenz:
 
-## Schritt 6 — In Ableton Live laden
+1. Im Patch: **File → Export as Max for Live Device**
+2. Dateiname: `Lyra.amxd`
+3. Ordner: `/Users/andi/Music/Ableton/User Library/Max for Live/`
+4. Speichern
+5. In Ableton Live: Browser → **Max for Live** → `Lyra` erscheint als Device
 
-Ohne `.amxd`-Export geht es trotzdem:
+### Ohne M4L-Lizenz (Workaround):
 
-1. Ableton Live 12.4 öffnen
-2. In Max 8: das geöffnete Patch-Fenster direkt in den **Browser-Bereich von Ableton Live ziehen**
-   - Alternativ: `File → Export As Max for Live Device` falls der Menüpunkt existiert
-3. In Live: Browser → **Max for Live** → `Lyra` sollte erscheinen
-4. `Lyra` auf einen MIDI-Track ziehen
-5. Device-View:
+1. Das Patch in Max geöffnet lassen
+2. Das **Patch-Fenster direkt in den Browser-Bereich von Ableton Live ziehen**
+3. Auf einen MIDI-Track legen
+4. Es erscheint dann als Device auf dem Track, auch wenn es nicht im Browser listet
+
+**Warnung:** Ohne Lizenz kannst du keine `.amxd` exportieren. Das direkte Ziehen des Patch-Fensters ist der einzige Weg, es in Live zu laden.
+
+## Schritt 6 — In Ableton Live nutzen
+
+1. Browser → **Max for Live** → `Lyra` sollte erscheinen
+2. `Lyra` auf einen MIDI-Track ziehen
+3. Device-View:
    - **Status** zeigt `connected` (wenn Bridge läuft)
    - **Suggestion Deck** zeigt Lyra-Vorschläge
    - **Memory** zeigt Gedächtnis-Zusammenfassung
@@ -96,10 +107,11 @@ Memory-Feld sollte jetzt den geschriebenen Key anzeigen.
 | Problem | Check |
 |---|---|
 | Status bleibt disconnected | Bridge läuft? `curl http://127.0.0.1:3351/health` |
-| `Cannot find module 'ws'` | `cd src/max/lyra-device && npm install` |
-| `node.script` startet nicht | Max 8.2+, Max Console (`Ctrl+Alt+Shift+C`), Script-Pfad prüfen |
+| `Cannot find module 'ws'` | `cd src/max/lyra-device && npm install` und `node_modules/` mitkopieren |
+| `node.script` startet nicht | Max Console (`Ctrl+Alt+Shift+C`), Script-Pfad prüfen |
 | Keine UI-Updates | `route`-Argumente prüfen, Outlets verdrahtet? |
-| `.maxpat` lädt nicht in Live | Patch in Max öffnen und neu speichern, Browser-Cache leeren |
+| Device erscheint als "Max patcher" | Ohne M4L-Lizenz: Patch-Fenster aus Max direkt in Live-Browser ziehen |
+| Device nicht im Browser | Live neu starten, Browser refreshen, oder Patch aus Max ziehen |
 | Memory-Pfad nicht gefunden | Standard: `~/Library/Application Support/ableton-lyra/memory/` |
 
 ## Produktions-Deployment
@@ -107,9 +119,10 @@ Memory-Feld sollte jetzt den geschriebenen Key anzeigen.
 Für den fertigen Einsatz:
 
 1. `Lyra.maxpat` + `bridge-client.js` + `node_modules/` in einem Ordner bündeln
-2. Ordner nach `~/Music/Ableton/User Library/Max for Live/` kopieren
-3. Bridge-Server als Service einrichten (`launchd` auf macOS)
-4. Automatisches Reconnect im `bridge-client.js` aktivieren (bereits enthalten)
+2. Falls M4L-Lizenz vorhanden: `File → Export as Max for Live Device` → `.amxd` erstellen
+3. Ohne Lizenz: Patch in Max öffnen und als Device in Live laden
+4. Bridge-Server als Service einrichten (`launchd` auf macOS)
+5. Automatisches Reconnect im `bridge-client.js` aktivieren (bereits enthalten)
 
 ## Hinweis
 
@@ -118,4 +131,4 @@ Die Source-Versionierung erfolgt über:
 - `bridge-client.js` — Node for Max Script
 - `MAX8_BUILD_GUIDE.md` — Diese Anleitung
 
-Ohne aktive Max for Live Lizenz ist der Export als `.amxd` nicht möglich. Die `.maxpat` kann trotzdem direkt in Ableton Live als Gerät geladen werden, wenn Max for Live installiert ist.
+Ohne aktive Max for Live Lizenz ist der Export als `.amxd` nicht möglich. Das Patch kann trotzdem direkt in Ableton Live als Gerät geladen werden, wenn es aus Max in den Browser gezogen wird.

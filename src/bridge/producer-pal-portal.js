@@ -87,6 +87,12 @@ function proxyToProducerPal(body) {
   });
 }
 
+async function callPpal(tool, args = {}) {
+  const response = await proxyToProducerPal({ tool, args });
+  if (response && response.status === 'ok') return response.result || response;
+  return response || { status: 'error', message: 'Producer Pal did not respond.' };
+}
+
 async function handleLyraMemoryRead(args) {
   const { project, session, key } = args || {};
   const base = MEMORY_DIR;
@@ -120,86 +126,222 @@ async function handleLyraMemoryWrite(args) {
 
 async function handleArrangementCoach(args) {
   const { scope = 'current' } = args || {};
+  const liveSet = await callPpal('ppal-read-live-set', { include: ['tracks', 'scenes', 'locators'] });
+  const tracks = Array.isArray(liveSet?.tracks) ? liveSet.tracks : [];
+  const scenes = Array.isArray(liveSet?.scenes) ? liveSet.scenes : [];
+
+  const arrangementClips = tracks.reduce((sum, t) => sum + (Number(t.arrangementClipCount) || 0), 0);
+  const sessionClips = tracks.reduce((sum, t) => sum + (Number(t.sessionClipCount) || 0), 0);
+  const emptyScenes = scenes.filter((s) => (Number(s.clipCount) || 0) === 0).length;
+
+  const suggestions = [];
+  if (scenes.length > 20 && emptyScenes > 8) suggestions.push(`Reduce scenes: ${emptyScenes}/${scenes.length} empty`);
+  if (arrangementClips === 0 && sessionClips > 0) suggestions.push('Promote session clips to arrangement');
+  if (tracks.length > 12) suggestions.push('Consider bus grouping for cleanup');
+
   return {
     status: 'ok',
     scope,
-    message: 'Arrangement coach requires Producer Pal read access. Use ppal-read-live-set + ppal-read-track for density analysis.',
-    suggestion: 'Run ppal-read-live-set include:[tracks,scenes,locators] then ppal-read-track for each track with arrangement-clips.'
+    metrics: {
+      trackCount: tracks.length,
+      sceneCount: scenes.length,
+      emptyScenes,
+      arrangementClips,
+      sessionClips
+    },
+    suggestions
   };
 }
 
 async function handleLatencyWatchdog(args) {
   const { trackId } = args || {};
+  const tracks = await callPpal('ppal-read-live-set', { include: ['tracks'] });
+  const list = Array.isArray(tracks?.tracks) ? tracks.tracks : [];
+
+  const candidates = list
+    .filter((t) => {
+      if (trackId !== undefined && String(t.trackIndex) !== String(trackId)) return false;
+      return (t.deviceCount || 0) > 3;
+    })
+    .map((t) => ({
+      trackIndex: t.trackIndex,
+      name: t.name,
+      deviceCount: t.deviceCount,
+      hint: 'High device count may increase latency; consider flattening or freezing.'
+    }));
+
   return {
     status: 'ok',
-    message: 'Latency scan requires Live Object Model access via ppal-live-api.',
-    suggestion: 'Use ppal-read-track trackId with include:[devices] and inspect device chains for CPU-heavy devices.'
+    scanned: list.length,
+    candidates
   };
 }
 
 async function handleRackLibrarian(args) {
+  const tracks = await callPpal('ppal-read-live-set', { include: ['tracks'] });
+  const list = Array.isArray(tracks?.tracks) ? tracks.tracks : [];
+  const rackSummary = [];
+
+  for (const track of list.slice(0, 8)) {
+    const detail = await callPpal('ppal-read-track', { trackIndex: track.trackIndex, include: ['devices'] });
+    const devices = Array.isArray(detail?.devices) ? detail.devices : [];
+    const racks = devices.filter((d) => /rack/i.test(d.type || d.name || ''));
+    for (const rack of racks) {
+      rackSummary.push({
+        trackIndex: track.trackIndex,
+        trackName: track.name,
+        devicePath: rack.path,
+        name: rack.name,
+        type: rack.type
+      });
+    }
+  }
+
   return {
     status: 'ok',
-    message: 'Rack librarian requires ppal-read-track with include:[devices] to enumerate racks and macros.',
-    suggestion: 'Scan tracks for rack devices, then read macro names and current variation indexes.'
+    scannedTracks: Math.min(list.length, 8),
+    racks: rackSummary,
+    suggestion: 'Use ppal-read-device devicePath with include:[params] to inspect macro names.'
   };
 }
 
 async function handleDummyBuild(args) {
-  const { target, preset } = args || {};
+  const { target, preset = 'filter-sweep' } = args || {};
+  if (!target) return { status: 'error', message: 'target is required, e.g. t0/d0/paramName' };
+
+  const [trackPart, ...rest] = String(target).split('/');
+  const trackIndex = Number(trackPart.replace(/^t/, ''));
+  const devicePath = rest.join('/');
+
+  const clip = await callPpal('ppal-create-clip', {
+    trackIndex,
+    length: '1bar',
+    notes: ''
+  });
+
+  const transform =
+    preset === 'lfo'
+      ? `timing = swing(0.05)\nvelocity = sin(n/4) * 40 + 60`
+      : `timing = quant(n/16)\nvelocity = ramp(40, 100)`;
+
+  const updated = await callPpal('ppal-update-clip', {
+    ids: [clip.id].filter(Boolean).join(','),
+    transforms: transform
+  });
+
   return {
     status: 'ok',
-    message: 'Dummy clip builder requires ppal-create-clip + ppal-update-clip with automation transforms.',
-    suggestion: `Create a MIDI clip on the target track and apply transform: envelope to ${target || 'selected parameter'}.`
+    preset,
+    target,
+    clip: clip,
+    transform
   };
 }
 
 async function handleCompAssist(args) {
+  const tracks = await callPpal('ppal-read-live-set', { include: ['tracks'] });
+  const list = Array.isArray(tracks?.tracks) ? tracks.tracks : [];
+  const candidates = list.filter((t) => /comp/i.test(t.name) || /parallel/i.test(t.name));
+
   return {
     status: 'ok',
-    message: 'Comping assistant requires analyzing clip takes via ppal-read-clip.',
-    suggestion: 'Read all clips in the current session and rank by note density / duration / user tagging.'
+    scannedTracks: list.length,
+    candidates: candidates.map((t) => ({ trackIndex: t.trackIndex, name: t.name })),
+    suggestion: 'Use ppal-read-clip on each candidate track to inspect takes and clip lengths.'
   };
 }
 
 async function handleSampleSimilar(args) {
-  const { sample } = args || {};
+  const { sample, tags, type: sampleType } = args || {};
+  const result = await callPpal('ppal-library', {
+    action: 'search',
+    query: sample ? String(sample) : '',
+    tags: tags ? String(tags) : '',
+    type: sampleType || '',
+    limit: 10
+  });
+
   return {
     status: 'ok',
-    message: 'Sample similarity search requires Live\'s browser similarity engine via ppal-library.',
-    suggestion: `Use ppal-library query with similar-to:${sample || '<sample-name>'} to find matches.`
+    query: { sample, tags, type: sampleType },
+    matches: Array.isArray(result) ? result : []
   };
 }
 
 async function handlePerformAudit(args) {
+  const liveSet = await callPpal('ppal-read-live-set', { include: ['scenes'] });
+  const scenes = Array.isArray(liveSet?.scenes) ? liveSet.scenes : [];
+
+  const audit = scenes.map((s) => ({
+    sceneIndex: s.sceneIndex,
+    name: s.name,
+    clipCount: s.clipCount,
+    suggestion: s.clipCount === 0 ? 'Empty scene — consider removing or reusing.' : undefined
+  }));
+
   return {
     status: 'ok',
-    message: 'Follow Action audit requires reading scene and clip launch settings via ppal-read-live-set.',
-    suggestion: 'Inspect scenes for Follow Action probability, repeat mode, and disabled clips.'
+    scenes: audit,
+    summary: {
+      total: scenes.length,
+      empty: audit.filter((s) => s.clipCount === 0).length
+    }
   };
 }
 
 async function handlePerformSequencer(args) {
+  const { target, pattern } = args || {};
+  if (!target) return { status: 'error', message: 'target is required, e.g. t0/d0 for a device or macro target' };
+
+  const scene = await callPpal('ppal-create-scene', { count: 1, name: `Lyra ${new Date().toISOString().slice(11, 19)}` });
   return {
     status: 'ok',
-    message: 'Macro sequencer requires ppal-update-scene and ppal-update-device for macro automation.',
-    suggestion: 'Sequence macro variations across scenes using arrangement automation or dummy clips.'
+    message: 'Sequence target recorded. Use ppal-update-device / ppal-update-scene to write automation.',
+    target,
+    pattern,
+    scene
   };
 }
 
 async function handleMidiCoach(args) {
+  const tracks = await callPpal('ppal-read-live-set', { include: ['tracks'] });
+  const list = Array.isArray(tracks?.tracks) ? tracks.tracks : [];
+  const midiTracks = list.filter((t) => t.type === 'midi').slice(0, 5);
+
+  const analyzed = [];
+  for (const track of midiTracks) {
+    const detail = await callPpal('ppal-read-track', { trackIndex: track.trackIndex, include: ['session-clips'] });
+    const clips = Array.isArray(detail?.sessionClips) ? detail.sessionClips : [];
+    analyzed.push({
+      trackIndex: track.trackIndex,
+      name: track.name,
+      clipCount: clips.length,
+      suggestion: clips.length ? 'Use ppal-read-clip include:[notes] for note analysis.' : 'Empty MIDI track'
+    });
+  }
+
   return {
     status: 'ok',
-    message: 'MIDI coach requires ppal-read-clip with include:[notes] to analyze current clip content.',
-    suggestion: 'Inspect note density, pitch range, and rhythm before recommending Transformations.'
+    midiTracks: analyzed,
+    suggestion: 'Pick a clip and apply transforms: quantize, humanize, or pitch mapping.'
   };
 }
 
 async function handleMidiMutate(args) {
+  const { clipId, transforms } = args || {};
+  if (!clipId) return { status: 'error', message: 'clipId is required' };
+  if (!transforms) return { status: 'error', message: 'transforms is required, newline-separated transform expressions' };
+
+  const updated = await callPpal('ppal-update-clip', {
+    ids: String(clipId),
+    transforms: String(transforms)
+  });
+
   return {
     status: 'ok',
-    message: 'MIDI mutate requires ppal-update-clip with transform expressions.',
-    suggestion: 'Use transforms like: randomize-velocity, invert-intervals, scale-degree-map, groove-template.'
+    clipId,
+    transforms,
+    result: updated
   };
 }
 

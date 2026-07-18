@@ -189,11 +189,11 @@
                     "parameter_enable": 0,
                     "patching_rect": [ 40.0, 340.0, 300.0, 36.0 ],
                     "presentation": 1,
-                    "presentation_rect": [ 10.0, 28.0, 620.0, 36.0 ],
+                    "presentation_rect": [ 10.0, 28.0, 300.0, 36.0 ],
                     "readonly": 1,
                     "rounded": 4.0,
                     "text": "disconnected",
-                    "textcolor": [ 1.0, 1.0, 1.0, 1.0 ],
+                    "textcolor": [ 1.0, 0.4, 0.4, 1.0 ],
                     "varname": "status_display",
                     "wordwrap": 0
                 }
@@ -240,7 +240,7 @@
                     "parameter_enable": 0,
                     "patching_rect": [ 360.0, 340.0, 320.0, 120.0 ],
                     "presentation": 1,
-                    "presentation_rect": [ 10.0, 90.0, 620.0, 220.0 ],
+                    "presentation_rect": [ 330.0, 90.0, 300.0, 140.0 ],
                     "readonly": 1,
                     "rounded": 4.0,
                     "textcolor": [ 0.85, 0.85, 0.88, 1.0 ],
@@ -289,7 +289,7 @@
                     "parameter_enable": 0,
                     "patching_rect": [ 40.0, 450.0, 300.0, 40.0 ],
                     "presentation": 1,
-                    "presentation_rect": [ 10.0, 330.0, 480.0, 50.0 ],
+                    "presentation_rect": [ 10.0, 330.0, 310.0, 50.0 ],
                     "readonly": 1,
                     "rounded": 4.0,
                     "textcolor": [ 0.45, 0.9, 0.55, 1.0 ],
@@ -348,7 +348,21 @@
                     "numinlets": 1,
                     "numoutlets": 0,
                     "patching_rect": [ 360.0, 575.0, 81.0, 19.0 ],
-                    "text": "Result (debug)"
+                    "text": "Result"
+                }
+            },
+            {
+                "box": {
+                    "fontsize": 10.0,
+                    "id": "obj-lbl-ver",
+                    "maxclass": "comment",
+                    "numinlets": 1,
+                    "numoutlets": 0,
+                    "patching_rect": [ 10.0, 520.0, 200.0, 19.0 ],
+                    "presentation": 1,
+                    "presentation_rect": [ 10.0, 390.0, 200.0, 19.0 ],
+                    "text": "Lyra 0.1.0 — Bridge Client",
+                    "textcolor": [ 0.5, 0.5, 0.55, 1.0 ]
                 }
             },
             {

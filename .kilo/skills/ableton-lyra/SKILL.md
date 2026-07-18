@@ -94,4 +94,7 @@ Diese Tools erfordern den Lyra Bridge-Server:
 - **Palette-Safe Colors**: Wenn Tracks gefärbt werden, immer `ppal-read-live-set` danach ausführen — Live snappt Hex-Werte auf die feste Palette. Das Ergebnis aus dem Read zurückgeben und ggf. anpassen.
 - **VST/AU Parameter**: Können nur gelesen/geschrieben werden, wenn sie in Lives Configure Mode gemappt sind. Nutze native Devices (Utility, EQ Eight, Reverb) für vollständige Kontrolle.
 - **Undo-Integration**: Jeder Lyra-Schreibvorgang erstellt einen Undo-Punkt. User kann mit Cmd/Ctrl+Z rückgängig machen.
-- **Deployment Path**: Die Bridge-Erweiterung (Phase 1) und das Max-Device (Phase 2) sind noch nicht implementiert. Aktuell operiert Lyra primär über Producer Pal Native Tools + manuelle Workflows. Siehe `docs/architecture/lyra-architecture.md` für Phasenplan.
+- **Deployment Path**: 
+  - Phase 1 (Bridge Extension): **Implementiert und getestet** — `lyra.*` Namespaces laufen über den Bridge-Server auf Port 3351
+  - Phase 2 (Max Device): **Teilweise implementiert** — `lyra-device.maxpat` existiert und ist getestet; UI/UX verbessert; `.amxd`-Export erfordert aktive M4L-Lizenz
+  - Aktuell operiert Lyra primär über Producer Pal Native Tools + Bridge-Server. Siehe `docs/architecture/lyra-architecture.md` für Phasenplan.

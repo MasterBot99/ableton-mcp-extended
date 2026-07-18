@@ -91,6 +91,9 @@ async function callPpal(tool, args = {}) {
   const response = await proxyToProducerPal({ tool, args });
   if (!response) return { status: 'error', message: 'Producer Pal did not respond.' };
   if (response.status === 'ok') return response.result || response;
+  if (typeof response === 'string') {
+    return { status: 'error', message: response };
+  }
   return response;
 }
 
